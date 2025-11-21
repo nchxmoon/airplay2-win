@@ -18,6 +18,10 @@
 //#include "utils.h"
 #include <crtdbg.h>
 
+// 2025.11.13, add by jack, video_process保存成图片/视频.
+#include "video_process.h"
+
+
 //#define CHALLENGE "LfBLs2pkGT4yYAJrxj2K9Q=="
 //static unsigned char ipaddr[] = { 192, 168, 1, 10 };
 //static unsigned char hwaddr[] = { 0x00, 0x5A, 0xDB, 0xE4, 0xE6, 0xFD };
@@ -48,7 +52,7 @@
 //}
 
 static void
-photo_cb(char *data, int datalen)
+photo_cb(char* data, int datalen)
 {
 	char template[512];
 	int written = 0;
@@ -61,7 +65,7 @@ photo_cb(char *data, int datalen)
 	fd = mkstemps(template, 4);
 
 	while (written < datalen) {
-		ret = write(fd, data+written, datalen-written);
+		ret = write(fd, data + written, datalen - written);
 		if (ret <= 0) break;
 		written += ret;
 	}
@@ -101,8 +105,8 @@ playback_info_cb()
 {
 }
 
-static void *
-audio_init(void *opaque, int bits, int channels, int samplerate)
+static void*
+audio_init(void* opaque, int bits, int channels, int samplerate)
 {
 	//int driver;
 	//ao_sample_format format;
@@ -162,12 +166,12 @@ audio_set_coverart(void* cls, void* session, const void* buffer, int buflen, con
 static void
 audio_process(void* cls, pcm_data_struct* data, const char* remoteName, const char* remoteDeviceId)
 {
-//	ao_device *device = ptr;
+	//	ao_device *device = ptr;
 
-//	assert(device);
+	//	assert(device);
 
 	printf("Got %d bytes of audio.[%ul, %u, %u, %u]\n", data->data_len, data->pts, data->sample_rate, data->channels, data->bits_per_sample);
-//	ao_play(device, (char *)buffer, buflen);
+	//	ao_play(device, (char *)buffer, buflen);
 }
 
 static void
@@ -189,16 +193,22 @@ audio_flush(void* cls, void* session, const char* remoteName, const char* remote
 static void
 audio_destroy(void* cls, void* session, const char* remoteName, const char* remoteDeviceId)
 {
-//	ao_device *device = ptr;
+	//	ao_device *device = ptr;
 
 	printf("Closing audio device\n");
-//	ao_close(device);
+	//	ao_close(device);
 }
 
 static void
-video_process(void* cls, h264_decode_struct * data, const char* remoteName, const char* remoteDeviceId)
+video_process(void* cls, h264_decode_struct* data, const char* remoteName, const char* remoteDeviceId)
 {
-	printf("Receive video data.[%ul]\n", data->pts);
+	//printf("Receive video data.[%ul]\n", data->pts);
+
+	//print_ffmpeg_parsers_and_version();
+
+	//save_to_jpeg(data);
+
+	save_to_video(data);
 }
 
 static void
@@ -208,21 +218,21 @@ raop_log_callback(void* cls, int level, const char* msg)
 }
 
 int
-main(int argc, char *argv[])
+main(int argc, char* argv[])
 {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 
 	const char* name = "shairplay";
-        unsigned short raop_port = 5000;
-        unsigned short airplay_port = 7000;
-        const char hwaddr[] = { 0x48, 0x5d, 0x60, 0x7c, 0xee, 0x22 };
-	char *pemstr = NULL;
+	unsigned short raop_port = 5000;
+	unsigned short airplay_port = 7000;
+	const char hwaddr[] = { 0x48, 0x5d, 0x60, 0x7c, 0xee, 0x22 };
+	char* pemstr = NULL;
 
-	dnssd_t *dnssd;
-	airplay_t *airplay;
+	dnssd_t* dnssd;
+	airplay_t* airplay;
 	airplay_callbacks_t ap_cbs;
 	memset(&ap_cbs, 0, sizeof(airplay_callbacks_t));
-	raop_t *raop;
+	raop_t* raop;
 	raop_callbacks_t raop_cbs;
 	memset(&raop_cbs, 0, sizeof(raop_callbacks_t));
 
@@ -285,7 +295,7 @@ main(int argc, char *argv[])
 		Sleep(1000);
 #endif
 		loopCount++;
-		if (loopCount > 10) {
+		if (loopCount > 600) {
 			break;
 		}
 	}
@@ -294,13 +304,16 @@ main(int argc, char *argv[])
 	raop_destroy(raop);
 
 	airplay_stop(airplay);
- 	airplay_destroy(airplay);
+	airplay_destroy(airplay);
 
 	dnssd_unregister_airplay(dnssd);
 	dnssd_unregister_raop(dnssd);
 	dnssd_destroy(dnssd);
 
 	// ao_shutdown();
+
+	// 2025.11.20, add by jack, video_process保存成图片/视频.
+	ffmpeg_video_deinit();
 
 	return 0;
 }

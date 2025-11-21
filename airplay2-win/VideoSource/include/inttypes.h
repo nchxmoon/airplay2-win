@@ -1,281 +1,341 @@
-/* 7.8 Format conversion of integer types <inttypes.h> */
+//
+// inttypes.h
+//
+//      Copyright (c) Microsoft Corporation. All rights reserved.
+//
+// Various integer format specifier macros for use with the stdio library, and
+// various integer conversion and manipulation functions.
+//
+#pragma once
+#ifndef _INTTYPES // include guard for 3rd party interop
+#define _INTTYPES
 
-#ifndef _INTTYPES_H_
-#define _INTTYPES_H_
-
-#include <_mingw.h>
+#include <corecrt.h>
 #include <stdint.h>
-#define __need_wchar_t
-#include <stddef.h>
 
-#ifdef	__cplusplus
-extern	"C"	{
+#pragma warning(push)
+#pragma warning(disable: _UCRT_DISABLED_WARNINGS)
+_UCRT_DISABLE_CLANG_WARNINGS
+
+_CRT_BEGIN_C_HEADER
+
+
+
+//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//
+// Types
+//
+//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+typedef struct
+{
+    intmax_t quot;
+    intmax_t rem;
+} _Lldiv_t;
+
+typedef _Lldiv_t imaxdiv_t;
+
+
+
+//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//
+// Functions
+//
+//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+_Check_return_
+_ACRTIMP intmax_t __cdecl imaxabs(
+    _In_ intmax_t _Number
+    );
+
+_Check_return_
+_ACRTIMP imaxdiv_t __cdecl imaxdiv(
+    _In_ intmax_t _Numerator,
+    _In_ intmax_t _Denominator
+    );
+
+_ACRTIMP intmax_t __cdecl strtoimax(
+    _In_z_                   char const* _String,
+    _Out_opt_ _Deref_post_z_ char**      _EndPtr,
+    _In_                     int         _Radix
+    );
+
+_ACRTIMP intmax_t __cdecl _strtoimax_l(
+    _In_z_                   char const* _String,
+    _Out_opt_ _Deref_post_z_ char**      _EndPtr,
+    _In_                     int         _Radix,
+    _In_opt_                 _locale_t   _Locale
+    );
+
+_ACRTIMP uintmax_t __cdecl strtoumax(
+    _In_z_                   char const* _String,
+    _Out_opt_ _Deref_post_z_ char**      _EndPtr,
+    _In_                     int         _Radix
+    );
+
+_ACRTIMP uintmax_t __cdecl _strtoumax_l(
+    _In_z_                   char const* _String,
+    _Out_opt_ _Deref_post_z_ char**      _EndPtr,
+    _In_                     int         _Radix,
+    _In_opt_                 _locale_t   _Locale
+    );
+
+_ACRTIMP intmax_t __cdecl wcstoimax(
+    _In_z_                   wchar_t const* _String,
+    _Out_opt_ _Deref_post_z_ wchar_t**      _EndPtr,
+    _In_                     int            _Radix
+    );
+
+_ACRTIMP intmax_t __cdecl _wcstoimax_l(
+    _In_z_                   wchar_t const* _String,
+    _Out_opt_ _Deref_post_z_ wchar_t**      _EndPtr,
+    _In_                     int            _Radix,
+    _In_opt_                 _locale_t      _Locale
+    );
+
+_ACRTIMP uintmax_t __cdecl wcstoumax(
+    _In_z_                   wchar_t const* _String,
+    _Out_opt_ _Deref_post_z_ wchar_t**      _EndPtr,
+    _In_                     int            _Radix
+    );
+
+_ACRTIMP uintmax_t __cdecl _wcstoumax_l(
+    _In_z_                   wchar_t const* _String,
+    _Out_opt_ _Deref_post_z_ wchar_t**      _EndPtr,
+    _In_                     int            _Radix,
+    _In_opt_                 _locale_t      _Locale
+    );
+
+
+
+//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//
+// Output Format Specifier Macros
+//
+//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+#define PRId8        "hhd"
+#define PRId16       "hd"
+#define PRId32       "d"
+#define PRId64       "lld"
+#define PRIdLEAST8   PRId8
+#define PRIdLEAST16  PRId16
+#define PRIdLEAST32  PRId32
+#define PRIdLEAST64  PRId64
+#define PRIdFAST8    PRId8
+#define PRIdFAST16   PRId32
+#define PRIdFAST32   PRId32
+#define PRIdFAST64   PRId64
+#define PRIdMAX      PRId64
+#ifdef _WIN64
+    #define PRIdPTR  PRId64
+#else
+    #define PRIdPTR  PRId32
 #endif
 
-typedef struct {
-	intmax_t quot;
-	intmax_t rem;
-	} imaxdiv_t;
+#define PRIi8        "hhi"
+#define PRIi16       "hi"
+#define PRIi32       "i"
+#define PRIi64       "lli"
+#define PRIiLEAST8   PRIi8
+#define PRIiLEAST16  PRIi16
+#define PRIiLEAST32  PRIi32
+#define PRIiLEAST64  PRIi64
+#define PRIiFAST8    PRIi8
+#define PRIiFAST16   PRIi32
+#define PRIiFAST32   PRIi32
+#define PRIiFAST64   PRIi64
+#define PRIiMAX      PRIi64
+#ifdef _WIN64
+    #define PRIiPTR  PRIi64
+#else
+    #define PRIiPTR  PRIi32
+#endif
 
-#if !defined(__cplusplus) || defined(__STDC_FORMAT_MACROS)
+#define PRIo8        "hho"
+#define PRIo16       "ho"
+#define PRIo32       "o"
+#define PRIo64       "llo"
+#define PRIoLEAST8   PRIo8
+#define PRIoLEAST16  PRIo16
+#define PRIoLEAST32  PRIo32
+#define PRIoLEAST64  PRIo64
+#define PRIoFAST8    PRIo8
+#define PRIoFAST16   PRIo32
+#define PRIoFAST32   PRIo32
+#define PRIoFAST64   PRIo64
+#define PRIoMAX      PRIo64
+#ifdef _WIN64
+    #define PRIoPTR  PRIo64
+#else
+    #define PRIoPTR  PRIo32
+#endif
 
-/* 7.8.1 Macros for format specifiers
- * 
- * MS runtime does not yet understand C9x standard "ll"
- * length specifier. It appears to treat "ll" as "l".
- * The non-standard I64 length specifier causes warning in GCC,
- * but understood by MS runtime functions.
- */
+#define PRIu8        "hhu"
+#define PRIu16       "hu"
+#define PRIu32       "u"
+#define PRIu64       "llu"
+#define PRIuLEAST8   PRIu8
+#define PRIuLEAST16  PRIu16
+#define PRIuLEAST32  PRIu32
+#define PRIuLEAST64  PRIu64
+#define PRIuFAST8    PRIu8
+#define PRIuFAST16   PRIu32
+#define PRIuFAST32   PRIu32
+#define PRIuFAST64   PRIu64
+#define PRIuMAX      PRIu64
+#ifdef _WIN64
+    #define PRIuPTR  PRIu64
+#else
+    #define PRIuPTR  PRIu32
+#endif
 
-/* fprintf macros for signed types */
-#define PRId8 "d"
-#define PRId16 "d"
-#define PRId32 "d"
-#define PRId64 "I64d"
+#define PRIx8        "hhx"
+#define PRIx16       "hx"
+#define PRIx32       "x"
+#define PRIx64       "llx"
+#define PRIxLEAST8   PRIx8
+#define PRIxLEAST16  PRIx16
+#define PRIxLEAST32  PRIx32
+#define PRIxLEAST64  PRIx64
+#define PRIxFAST8    PRIx8
+#define PRIxFAST16   PRIx32
+#define PRIxFAST32   PRIx32
+#define PRIxFAST64   PRIx64
+#define PRIxMAX      PRIx64
+#ifdef _WIN64
+    #define PRIxPTR  PRIx64
+#else
+    #define PRIxPTR  PRIx32
+#endif
 
-#define PRIdLEAST8 "d"
-#define PRIdLEAST16 "d"
-#define PRIdLEAST32 "d"
-#define PRIdLEAST64 "I64d"
-
-#define PRIdFAST8 "d"
-#define PRIdFAST16 "d"
-#define PRIdFAST32 "d"
-#define PRIdFAST64 "I64d"
-
-#define PRIdMAX "I64d"
-#define PRIdPTR "d"
-
-#define PRIi8 "i"
-#define PRIi16 "i"
-#define PRIi32 "i"
-#define PRIi64 "I64i"
-
-#define PRIiLEAST8 "i"
-#define PRIiLEAST16 "i"
-#define PRIiLEAST32 "i"
-#define PRIiLEAST64 "I64i"
-
-#define PRIiFAST8 "i"
-#define PRIiFAST16 "i"
-#define PRIiFAST32 "i"
-#define PRIiFAST64 "I64i"
-
-#define PRIiMAX "I64i"
-#define PRIiPTR "i"
-
-#define PRIo8 "o"
-#define PRIo16 "o"
-#define PRIo32 "o"
-#define PRIo64 "I64o"
-
-#define PRIoLEAST8 "o"
-#define PRIoLEAST16 "o"
-#define PRIoLEAST32 "o"
-#define PRIoLEAST64 "I64o"
-
-#define PRIoFAST8 "o"
-#define PRIoFAST16 "o"
-#define PRIoFAST32 "o"
-#define PRIoFAST64 "I64o"
-
-#define PRIoMAX "I64o"
-
-#define PRIoPTR "o"
-
-/* fprintf macros for unsigned types */
-#define PRIu8 "u"
-#define PRIu16 "u"
-#define PRIu32 "u"
-#define PRIu64 "I64u"
+#define PRIX8        "hhX"
+#define PRIX16       "hX"
+#define PRIX32       "X"
+#define PRIX64       "llX"
+#define PRIXLEAST8   PRIX8
+#define PRIXLEAST16  PRIX16
+#define PRIXLEAST32  PRIX32
+#define PRIXLEAST64  PRIX64
+#define PRIXFAST8    PRIX8
+#define PRIXFAST16   PRIX32
+#define PRIXFAST32   PRIX32
+#define PRIXFAST64   PRIX64
+#define PRIXMAX      PRIX64
+#ifdef _WIN64
+    #define PRIXPTR  PRIX64
+#else
+    #define PRIXPTR  PRIX32
+#endif
 
 
-#define PRIuLEAST8 "u"
-#define PRIuLEAST16 "u"
-#define PRIuLEAST32 "u"
-#define PRIuLEAST64 "I64u"
 
-#define PRIuFAST8 "u"
-#define PRIuFAST16 "u"
-#define PRIuFAST32 "u"
-#define PRIuFAST64 "I64u"
+//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+//
+// Input Format Specifier Macros
+//
+//-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+#define SCNd8        "hhd"
+#define SCNd16       "hd"
+#define SCNd32       "d"
+#define SCNd64       "lld"
+#define SCNdLEAST8   SCNd8
+#define SCNdLEAST16  SCNd16
+#define SCNdLEAST32  SCNd32
+#define SCNdLEAST64  SCNd64
+#define SCNdFAST8    SCNd8
+#define SCNdFAST16   SCNd32
+#define SCNdFAST32   SCNd32
+#define SCNdFAST64   SCNd64
+#define SCNdMAX      SCNd64
+#ifdef _WIN64
+    #define SCNdPTR  SCNd64
+#else
+    #define SCNdPTR  SCNd32
+#endif
 
-#define PRIuMAX "I64u"
-#define PRIuPTR "u"
+#define SCNi8        "hhi"
+#define SCNi16       "hi"
+#define SCNi32       "i"
+#define SCNi64       "lli"
+#define SCNiLEAST8   SCNi8
+#define SCNiLEAST16  SCNi16
+#define SCNiLEAST32  SCNi32
+#define SCNiLEAST64  SCNi64
+#define SCNiFAST8    SCNi8
+#define SCNiFAST16   SCNi32
+#define SCNiFAST32   SCNi32
+#define SCNiFAST64   SCNi64
+#define SCNiMAX      SCNi64
+#ifdef _WIN64
+    #define SCNiPTR  SCNi64
+#else
+    #define SCNiPTR  SCNi32
+#endif
 
-#define PRIx8 "x"
-#define PRIx16 "x"
-#define PRIx32 "x"
-#define PRIx64 "I64x"
+#define SCNo8        "hho"
+#define SCNo16       "ho"
+#define SCNo32       "o"
+#define SCNo64       "llo"
+#define SCNoLEAST8   SCNo8
+#define SCNoLEAST16  SCNo16
+#define SCNoLEAST32  SCNo32
+#define SCNoLEAST64  SCNo64
+#define SCNoFAST8    SCNo8
+#define SCNoFAST16   SCNo32
+#define SCNoFAST32   SCNo32
+#define SCNoFAST64   SCNo64
+#define SCNoMAX      SCNo64
+#ifdef _WIN64
+    #define SCNoPTR  SCNo64
+#else
+    #define SCNoPTR  SCNo32
+#endif
 
-#define PRIxLEAST8 "x"
-#define PRIxLEAST16 "x"
-#define PRIxLEAST32 "x"
-#define PRIxLEAST64 "I64x"
+#define SCNu8        "hhu"
+#define SCNu16       "hu"
+#define SCNu32       "u"
+#define SCNu64       "llu"
+#define SCNuLEAST8   SCNu8
+#define SCNuLEAST16  SCNu16
+#define SCNuLEAST32  SCNu32
+#define SCNuLEAST64  SCNu64
+#define SCNuFAST8    SCNu8
+#define SCNuFAST16   SCNu32
+#define SCNuFAST32   SCNu32
+#define SCNuFAST64   SCNu64
+#define SCNuMAX      SCNu64
+#ifdef _WIN64
+    #define SCNuPTR  SCNu64
+#else
+    #define SCNuPTR  SCNu32
+#endif
 
-#define PRIxFAST8 "x"
-#define PRIxFAST16 "x"
-#define PRIxFAST32 "x"
-#define PRIxFAST64 "I64x"
+#define SCNx8        "hhx"
+#define SCNx16       "hx"
+#define SCNx32       "x"
+#define SCNx64       "llx"
+#define SCNxLEAST8   SCNx8
+#define SCNxLEAST16  SCNx16
+#define SCNxLEAST32  SCNx32
+#define SCNxLEAST64  SCNx64
+#define SCNxFAST8    SCNx8
+#define SCNxFAST16   SCNx32
+#define SCNxFAST32   SCNx32
+#define SCNxFAST64   SCNx64
+#define SCNxMAX      SCNx64
+#ifdef _WIN64
+    #define SCNxPTR  SCNx64
+#else
+    #define SCNxPTR  SCNx32
+#endif
 
-#define PRIxMAX "I64x"
-#define PRIxPTR "x"
 
-#define PRIX8 "X"
-#define PRIX16 "X"
-#define PRIX32 "X"
-#define PRIX64 "I64X"
 
-#define PRIXLEAST8 "X"
-#define PRIXLEAST16 "X"
-#define PRIXLEAST32 "X"
-#define PRIXLEAST64 "I64X"
-
-#define PRIXFAST8 "X"
-#define PRIXFAST16 "X"
-#define PRIXFAST32 "X"
-#define PRIXFAST64 "I64X"
-
-#define PRIXMAX "I64X"
-#define PRIXPTR "X"
+_CRT_END_C_HEADER
 
 /*
- *   fscanf macros for signed int types
- *   NOTE: if 32-bit int is used for int_fast8_t and int_fast16_t
- *   (see stdint.h, 7.18.1.3), FAST8 and FAST16 should have
- *   no length identifiers
- */
+ * Copyright (c) 1992-2010 by P.J. Plauger.  ALL RIGHTS RESERVED.
+ * Consult your license regarding permissions and restrictions.
+V5.30:0009 */
 
-#define SCNd16 "hd"
-#define SCNd32 "d"
-#define SCNd64 "I64d"
-
-#define SCNdLEAST16 "hd"
-#define SCNdLEAST32 "d"
-#define SCNdLEAST64 "I64d"
-
-#define SCNdFAST16 "hd"
-#define SCNdFAST32 "d"
-#define SCNdFAST64 "I64d"
-
-#define SCNdMAX "I64d"
-#define SCNdPTR "d"
-
-#define SCNi16 "hi"
-#define SCNi32 "i"
-#define SCNi64 "I64i"
-
-#define SCNiLEAST16 "hi"
-#define SCNiLEAST32 "i"
-#define SCNiLEAST64 "I64i"
-
-#define SCNiFAST16 "hi"
-#define SCNiFAST32 "i"
-#define SCNiFAST64 "I64i"
-
-#define SCNiMAX "I64i"
-#define SCNiPTR "i"
-
-#define SCNo16 "ho"
-#define SCNo32 "o"
-#define SCNo64 "I64o"
-
-#define SCNoLEAST16 "ho"
-#define SCNoLEAST32 "o"
-#define SCNoLEAST64 "I64o"
-
-#define SCNoFAST16 "ho"
-#define SCNoFAST32 "o"
-#define SCNoFAST64 "I64o"
-
-#define SCNoMAX "I64o"
-#define SCNoPTR "o"
-
-#define SCNx16 "hx"
-#define SCNx32 "x"
-#define SCNx64 "I64x"
-
-#define SCNxLEAST16 "hx"
-#define SCNxLEAST32 "x"
-#define SCNxLEAST64 "I64x"
-
-#define SCNxFAST16 "hx"
-#define SCNxFAST32 "x"
-#define SCNxFAST64 "I64x"
-
-#define SCNxMAX "I64x"
-#define SCNxPTR "x"
-
-
-/* fscanf macros for unsigned int types */
-
-#define SCNu16 "hu"
-#define SCNu32 "u"
-#define SCNu64 "I64u"
-
-#define SCNuLEAST16 "hu"
-#define SCNuLEAST32 "u"
-#define SCNuLEAST64 "I64u"
-
-#define SCNuFAST16 "hu"
-#define SCNuFAST32 "u"
-#define SCNuFAST64 "I64u"
-
-#define SCNuMAX "I64u"
-#define SCNuPTR "u"
-
-#if defined (__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-/*
- * no length modifier for char types prior to C9x
- * MS runtime  scanf appears to treat "hh" as "h" 
- */
-
-/* signed char */
-#define SCNd8 "hhd"
-#define SCNdLEAST8 "hhd"
-#define SCNdFAST8 "hhd"
-
-#define SCNi8 "hhi"
-#define SCNiLEAST8 "hhi"
-#define SCNiFAST8 "hhi"
-
-#define SCNo8 "hho"
-#define SCNoLEAST8 "hho"
-#define SCNoFAST8 "hho"
-
-#define SCNx8 "hhx"
-#define SCNxLEAST8 "hhx"
-#define SCNxFAST8 "hhx"
-
-/* unsigned char */
-#define SCNu8 "hhu"
-#define SCNuLEAST8 "hhu"
-#define SCNuFAST8 "hhu"
-#endif /* __STDC_VERSION__ >= 199901 */
-
-#endif	/* !defined(__cplusplus) || defined(__STDC_FORMAT_MACROS) */
-
-intmax_t __cdecl __MINGW_NOTHROW imaxabs (intmax_t j);
-#ifndef __NO_INLINE__
-__CRT_INLINE intmax_t __cdecl __MINGW_NOTHROW imaxabs (intmax_t j)
-	{return	(j >= 0 ? j : -j);}
-#endif
-imaxdiv_t __cdecl __MINGW_NOTHROW imaxdiv (intmax_t numer, intmax_t denom);
-
-/* 7.8.2 Conversion functions for greatest-width integer types */
-
-intmax_t __cdecl __MINGW_NOTHROW strtoimax (const char* __restrict__ nptr,
-                            char** __restrict__ endptr, int base);
-uintmax_t __cdecl __MINGW_NOTHROW strtoumax (const char* __restrict__ nptr,
-			     char** __restrict__ endptr, int base);
-
-intmax_t __cdecl __MINGW_NOTHROW wcstoimax (const wchar_t* __restrict__ nptr,
-                            wchar_t** __restrict__ endptr, int base);
-uintmax_t __cdecl __MINGW_NOTHROW wcstoumax (const wchar_t* __restrict__ nptr,
-			     wchar_t** __restrict__ endptr, int base);
-
-#ifdef	__cplusplus
-}
-#endif
-
-#endif /* ndef _INTTYPES_H */
+_UCRT_RESTORE_CLANG_WARNINGS
+#pragma warning(pop) // _UCRT_DISABLED_WARNINGS
+#endif // _INTTYPES

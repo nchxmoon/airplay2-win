@@ -62,5 +62,8 @@
     <ClInclude Include="VideoSource\utils\xdw_std.h">
       <Filter>VideoSource</Filter>
     </ClInclude>
+    <ClInclude Include="video_process.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
