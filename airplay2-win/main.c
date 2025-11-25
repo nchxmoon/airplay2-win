@@ -1,4 +1,3 @@
-
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -19,6 +18,7 @@
 #include <crtdbg.h>
 
 // 2025.11.13, add by jack, video_process保存成图片/视频.
+#include "video_play.h"
 #include "video_process.h"
 
 
@@ -166,12 +166,91 @@ audio_set_coverart(void* cls, void* session, const void* buffer, int buflen, con
 static void
 audio_process(void* cls, pcm_data_struct* data, const char* remoteName, const char* remoteDeviceId)
 {
-	//	ao_device *device = ptr;
+    if (!data || !data->data || data->data_len <= 0) return;
 
-	//	assert(device);
+    /* 基本参数 */
+    int channels = data->channels ? data->channels : 2;
+    int bits = data->bits_per_sample ? data->bits_per_sample : 16;
+    int bytes_per_sample = bits / 8;
+    uint32_t sample_rate = data->sample_rate ? data->sample_rate : 44100;
 
-	printf("Got %d bytes of audio.[%ul, %u, %u, %u]\n", data->data_len, data->pts, data->sample_rate, data->channels, data->bits_per_sample);
-	//	ao_play(device, (char *)buffer, buflen);
+    /* 延迟初始化 audio_play，使用流的采样率/通道/位深 */
+    static uint32_t inited_sample_rate = 0;
+    if (inited_sample_rate == 0) {
+        /* 如果 main 里已有初始化则可以注释掉这段；否则用流的参数初始化 */
+        if (audio_play_init((int)sample_rate, channels, bits) < 0) {
+            printf("audio_play_init failed (sample_rate=%u channels=%d bits=%d)\n", sample_rate, channels, bits);
+        } else {
+            inited_sample_rate = sample_rate;
+        }
+    } else if (inited_sample_rate != sample_rate) {
+        /* 如果采样率改变，重新初始化设备以匹配新的采样率 */
+        audio_play_deinit();
+        if (audio_play_init((int)sample_rate, channels, bits) == 0) {
+            inited_sample_rate = sample_rate;
+            printf("audio_play_reinit to sample_rate=%u\n", sample_rate);
+        }
+    }
+
+    /* 自适应识别 data->data_len 含义：
+       三种候选解释：
+         A: data_len 是字节数
+         B: data_len 是每通道样本数（frames）
+         C: data_len 是总样本数（包含所有通道）
+       通过比较与 pts_delta（若可得）来判定最接近的持续时间。 */
+    static uint64_t last_pts_ms = 0;
+    static int detected_mode = -1; /* 0=bytes,1=frames_per_channel,2=total_samples */
+    uint64_t current_pts_ms = audio_pts_to_ms(data);
+
+    /* 计算三种候选的持续毫秒数 */
+    double dur_ms_A = (double)(data->data_len) / (double)(channels * bytes_per_sample) * 1000.0 / (double)sample_rate; /* 如果 data_len 为字节 */
+    double dur_ms_B = (double)(data->data_len) * 1000.0 / (double)sample_rate; /* 如果 data_len 为每通道帧数 */
+    double dur_ms_C = (double)( (double)data->data_len / (double)channels ) * 1000.0 / (double)sample_rate; /* 如果 data_len 为总样本数 */
+
+    /* 如果尚未检测到模式，尝试基于 pts 差值自动判定 */
+    if (detected_mode == -1 && last_pts_ms != 0 && current_pts_ms != 0 && current_pts_ms > last_pts_ms) {
+        uint64_t pts_delta = current_pts_ms - last_pts_ms;
+        double diffA = fabs(dur_ms_A - (double)pts_delta);
+        double diffB = fabs(dur_ms_B - (double)pts_delta);
+        double diffC = fabs(dur_ms_C - (double)pts_delta);
+        if (diffA <= diffB && diffA <= diffC) detected_mode = 0;
+        else if (diffB <= diffA && diffB <= diffC) detected_mode = 1;
+        else detected_mode = 2;
+        printf("audio_process: auto-detected mode=%d (diffA=%.1f diffB=%.1f diffC=%.1f) pts_delta=%llu\n",
+               detected_mode, diffA, diffB, diffC, (unsigned long long)pts_delta);
+    }
+
+    /* 若仍未检测到，做启发式默认：若 data_len 看起来像字节（很大）则选择 bytes */
+    if (detected_mode == -1) {
+        if (data->data_len > 10000) detected_mode = 0; /* 很可能字节 */
+        else detected_mode = 1; /* 否则默认每通道帧数 */
+        printf("audio_process: heuristic default mode=%d\n", detected_mode);
+    }
+
+    /* 根据检测模式计算实际字节数 */
+    int bytes = 0;
+    if (detected_mode == 0) {
+        bytes = data->data_len; /* data_len already bytes */
+    } else if (detected_mode == 1) {
+        bytes = data->data_len * channels * bytes_per_sample; /* frames_per_channel -> bytes */
+    } else { /* mode 2 */
+        bytes = data->data_len * bytes_per_sample; /* total samples -> bytes */
+    }
+
+    /* Debug（首次打印）*/
+    static int dbg = 0;
+    if (!dbg) {
+        printf("audio_process debug: sample_rate=%u channels=%u bits=%u data_len=%d -> bytes=%d durA=%.1fms durB=%.1fms durC=%.1fms pts=%u\n",
+               sample_rate, data->channels, data->bits_per_sample, data->data_len, bytes, dur_ms_A, dur_ms_B, dur_ms_C, data->pts);
+        dbg = 1;
+    }
+
+    /* 写入播放队列 */
+    if (audio_play_write((const void*)data->data, bytes, current_pts_ms) < 0) {
+        printf("audio_play_write failed\n");
+    }
+
+    last_pts_ms = current_pts_ms;
 }
 
 static void
@@ -191,11 +270,11 @@ audio_flush(void* cls, void* session, const char* remoteName, const char* remote
 }
 
 static void
-audio_destroy(void* cls, void* session, const char* remoteName, const char* remoteDeviceId)
+audio_disconnected(void* cls, const char* remoteName, const char* remoteDeviceId)
 {
 	//	ao_device *device = ptr;
 
-	printf("Closing audio device\n");
+   	printf("Closing audio device\n");
 	//	ao_close(device);
 }
 
@@ -208,7 +287,9 @@ video_process(void* cls, h264_decode_struct* data, const char* remoteName, const
 
 	//save_to_jpeg(data);
 
-	save_to_video(data);
+	//save_to_video(data);
+
+	play_video_realtime(data);
 }
 
 static void
@@ -257,13 +338,13 @@ main(int argc, char* argv[])
 // 	ap_cbs.audio_flush = audio_flush;
 // 	ap_cbs.audio_destroy = audio_destroy;
 
-	// raop_cbs.audio_init = audio_init;
+	//raop_cbs.audio_init = audio_init;
+	raop_cbs.disconnected = audio_disconnected;
 	raop_cbs.audio_set_volume = audio_set_volume;
 	raop_cbs.audio_set_metadata = audio_set_metadata;
 	raop_cbs.audio_set_coverart = audio_set_coverart;
 	raop_cbs.audio_process = audio_process;
 	raop_cbs.audio_flush = audio_flush;
-	// raop_cbs.audio_destroy = audio_destroy;
 	raop_cbs.video_process = video_process;
 
 	// airplay = airplay_init(1, &ap_cbs, NULL, NULL);
@@ -284,6 +365,11 @@ main(int argc, char* argv[])
 	dnssd_register_raop(dnssd, name, raop_port, hwaddr, sizeof(hwaddr), 0);
 	dnssd_register_airplay(dnssd, name, airplay_port, hwaddr, sizeof(hwaddr));
 
+	/* 初始化音频播放（示例：44100Hz, 2 通道, 16 bits）*/
+	if (audio_play_init(44100, 2, 16) < 0) {
+		printf("audio_play_init failed\n");
+	}
+
 	printf("Startup complete... Kill with Ctrl+C\n");
 
 	int running = 1;
@@ -292,10 +378,16 @@ main(int argc, char* argv[])
 #ifndef WIN32
 		sleep(1);
 #else
-		Sleep(1000);
+		//Sleep(1000);
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		Sleep(10);
 #endif
 		loopCount++;
-		if (loopCount > 600) {
+		if (loopCount > 60000) {
 			break;
 		}
 	}
@@ -314,6 +406,8 @@ main(int argc, char* argv[])
 
 	// 2025.11.20, add by jack, video_process保存成图片/视频.
 	ffmpeg_video_deinit();
+	audio_play_deinit();
+	ffmpeg_player_shutdown();
 
 	return 0;
 }

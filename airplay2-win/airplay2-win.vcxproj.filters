@@ -36,6 +36,9 @@
     <ClCompile Include="VideoSource\utils\xdw_socket_ipc.c">
       <Filter>VideoSource</Filter>
     </ClCompile>
+    <ClCompile Include="audio_play.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VideoSource\videosource.h">
@@ -63,6 +66,12 @@
       <Filter>VideoSource</Filter>
     </ClInclude>
     <ClInclude Include="video_process.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="video_play.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="audio_play.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
